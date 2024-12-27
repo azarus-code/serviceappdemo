@@ -1,0 +1,77 @@
+name: Build and Deploy to AKS
+
+on:
+  push:
+    branches:
+      - main
+
+env:
+  APP_NAME: serviceappdemo
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      # Step 1: Check out the code
+      - name: Checkout Code
+        uses: actions/checkout@v3
+
+      # Step 2: Log in to Docker Registry
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v2
+        with:
+         username: ${{secrets.DOCKER_USERNAME}}
+         password: ${{secrets.DOCKER_PASSWORD}}
+         registry: https://idpdeveacr.azurecr.io
+
+      # Step 3: Build the Docker Image
+      - name: Build App Image
+        run: |
+          docker build -t idpdeveacr.azurecr.io/serviceappdemo:latest -f Dockerfile .
+          
+      # Step 4: Push Docker Image to Registry
+      - name: Push Docker Image
+        run: |
+          docker push idpdeveacr.azurecr.io/serviceappdemo:latest
+  scan:
+    runs-on: ubuntu-latest
+    needs: build
+    steps:
+      - name: Static Code Analysis - sonar
+        run: |
+          echo "Running serviceappdemo as static code analysis"
+      
+      - name: Software Composition Analysis - blackduck
+        run: |
+          echo "Running blackduck as static code analysis"
+  deploy:
+    name: deploy to aks
+    runs-on: ubuntu-latest
+    needs: scan
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v3
+       # Step 2: Log in to Azure
+      - name: Azure Login
+        uses: azure/login@v1
+        with:
+          creds: ${{secrets.AZURE_CREDENTIALS}}
+
+      - name: Set up kubectl
+        uses: azure/setup-kubectl@v3
+        with:
+          version: 'latest'
+      # Step 3: Set up AKS credentials
+      - name: Set up AKS
+        run: |
+          az aks get-credentials --resource-group ${{secrets.AKS_RESOURCE_GROUP}} --name bsidp-cluster
+          kubectl config view
+
+      - name: Deploy to Kubernetes
+        env:
+          IMAGE: idpdeveacr.azurecr.io/serviceappdemo:latest
+        run: |
+          kubectl apply -f k8s/deployment.yaml
+      - name: Verify Deployment
+        run: |
+          kubectl rollout status deployment/serviceappdemo

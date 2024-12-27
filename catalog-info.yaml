@@ -1,0 +1,26 @@
+apiVersion: backstage.io/v1beta1
+kind: Component
+metadata:
+  name:  "serviceappdemo"
+  description: sample
+  tags:
+    - github
+    - aks
+    - nodejs
+  links:
+    - url: https://github.com/azarus-code/serviceappdemo
+      title: serviceappdemo Repository
+  annotations:
+    github.com/project-slug: azarus-code/serviceappdemo
+    github.com/workflow-ref: .github/workflows/deploy.yaml@main
+    backstage.io/managed-by-location: url:https://github.com/azarus-code/serviceappdemo
+    backstage.io/managed-by-origin-location: url:https://github.com/azarus-code/serviceappdemo
+    backstage.io/kubernetes-id: "serviceappdemo"
+    backstage.io/kubernetes-cluster: "bsidp-cluster"
+    backstage.io/kubernetes-namespace: 'default'
+    # backstage.io/techdocs-ref: dir:.
+    #backstage.io/techdocs-ref: url:http://<your-service-endpoint>
+spec:
+  type: service
+  owner: "azarus-code"
+  lifecycle: production
