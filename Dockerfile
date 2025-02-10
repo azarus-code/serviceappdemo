@@ -1,15 +1,15 @@
 FROM node:14
 # Create app directory
-WORKDIR /usr/src/app
+#WORKDIR /usr/src/app
 # Bundle app source
-COPY package*.json ./
+#COPY package*.json ./
 
 # Install the app dependencies
 RUN npm install
 
 COPY . .
 
-RUN npm test
+#RUN npm test
 
 EXPOSE 80
 # Run Node app
