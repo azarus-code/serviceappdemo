@@ -11,7 +11,7 @@ on:
 jobs:
   build:
     name: Build & Test
-    runs-on: lattice
+    runs-on: self-hosted
     outputs:
       # (Optional) You can output artifacts if needed by downstream jobs.
       build_artifact: ${{ steps.upload_artifact.outputs.artifact_path }}
@@ -48,7 +48,7 @@ jobs:
   sonar:
     name: SonarQube Analysis
     needs: build
-    runs-on: lattice
+    runs-on: self-hosted
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
@@ -72,7 +72,7 @@ jobs:
           SONAR_LOGIN: ${{ secrets.SONAR_LOGIN }}
         run: sonar-scanner
   scan:
-    runs-on: lattice
+    runs-on: self-hosted
     needs: sonar
     steps:      
       - name: Software Composition Analysis - blackduck
@@ -81,7 +81,7 @@ jobs:
   docker-push:
     name: Docker Build & Push
     needs: scan
-    runs-on: lattice
+    runs-on: self-hosted
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
@@ -106,7 +106,7 @@ jobs:
   
   deploy:
     name: deploy to aks
-    runs-on: lattice
+    runs-on: self-hosted
     needs: scan
     steps:
       - name: Checkout Code
