@@ -65,6 +65,10 @@ jobs:
 
       - name: Install SonarScanner
         run: npm install -g sonar-scanner
+      
+      - name: Set execute permission for sonar-scanner
+        run: |
+          chmod +x $(which sonar-scanner)
 
       - name: Run SonarScanner
         env:
