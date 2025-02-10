@@ -1,0 +1,5 @@
+node_modules
+coverage
+.github
+.owasp-dependency-check
+.scannerwork
