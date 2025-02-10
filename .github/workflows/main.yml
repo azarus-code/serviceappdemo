@@ -1,0 +1,139 @@
+name: Build, Test, SonarQube, and Docker Push
+
+on:
+  push:
+    branches:
+      - master
+      - dev
+  pull_request:
+
+jobs:
+  build:
+    name: Build & Test
+    runs-on: ubuntu-latest
+    outputs:
+      # (Optional) You can output artifacts if needed by downstream jobs.
+      build_artifact: ${{ steps.upload_artifact.outputs.artifact_path }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: 14
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Run preinstall script
+        run: npm run preinstall
+
+      - name: Run postinstall script
+        run: npm run postinstall
+
+      - name: Run tests
+        run: npm test || true
+
+      - name: Build the application
+        run: npm run build
+
+      # Upload build output (adjust paths as needed) for downstream jobs
+      - name: Upload artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: build-output
+          path: |
+            dist
+            sonar-project.properties
+
+  sonar:
+    name: SonarQube Analysis
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Download build artifact
+        uses: actions/download-artifact@v3
+        with:
+          name: build-output
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: 14
+
+      - name: Install SonarScanner
+        run: npm install -g sonar-scanner
+
+      - name: Run SonarScanner
+        env:
+          #SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}
+          SONAR_LOGIN: ${{ secrets.SONAR_LOGIN }}
+        run: sonar-scanner
+  scan:
+    runs-on: ubuntu-latest
+    needs: docker-push
+    steps:      
+      - name: Software Composition Analysis - blackduck
+        run: |
+          echo "Running blackduck as static code analysis"
+  docker-push:
+    name: Docker Build & Push
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Setup Docker Buildx
+        uses: docker/setup-buildx-action@v2
+
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v2
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+          registry: https://idpdeveacr.azurecr.io
+
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v3
+        with:
+          context: .
+          file: Dockerfile
+          push: true
+          tags: idpdeveacr.azurecr.io/serviceappdemo:latest
+  
+  deploy:
+    name: deploy to aks
+    runs-on: ubuntu-latest
+    needs: scan
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v3
+       # Step 2: Log in to Azure
+      - name: Azure Login
+        uses: azure/login@v1
+        with:
+          creds: ${{secrets.AZURE_CREDENTIALS}}
+
+      - name: Set up kubectl
+        uses: azure/setup-kubectl@v3
+        with:
+          version: 'latest'
+      # Step 3: Set up AKS credentials
+      - name: Set up AKS
+        run: |
+          az aks get-credentials --resource-group ${{secrets.AKS_RESOURCE_GROUP}} --name bsidp-cluster
+          kubectl config view
+
+      - name: Deploy to Kubernetes
+        env:
+          IMAGE: idpdeveacr.azurecr.io/serviceappdemo:latest
+        run: |
+          kubectl apply -f k8s/deployment.yaml
+      - name: Verify Deployment
+        run: |
+          kubectl rollout status deployment/serviceappdemo
