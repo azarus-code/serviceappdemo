@@ -65,23 +65,13 @@ jobs:
 
       - name: Install SonarScanner
         run: npm install -g sonar-scanner
-      
-      - name: Set execute permission for sonar-scanner
-        run: |
-          chmod +x $(which sonar-scanner)
-
+  
       - name: Run SonarScanner
         env:
           #SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}
           SONAR_LOGIN: ${{ secrets.SONAR_LOGIN }}
           SONAR_TOKEN: ${{ secrets.SONAR_LOGIN }}
-        run: |
-          sudo docker run --rm \
-            -e SONAR_HOST_URL="http://10.0.0.10:9000" \
-            -e SONAR_LOGIN="${{ secrets.SONAR_LOGIN }}" \
-            -v "$(pwd)":/usr/src/app \
-            -w /usr/src/app \
-            sonarsource/sonar-scanner-cli
+        run: sonar-scanner
   scan:
     runs-on: self-hosted
     needs: sonar
