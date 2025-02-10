@@ -1,11 +1,11 @@
-FROM node:14
+FROM node:14-slim 
 # Create app directory
-#WORKDIR /usr/src/app
+WORKDIR /usr/src/app
 # Bundle app source
-#COPY package*.json ./
+COPY package*.json ./
 
 # Install the app dependencies
-RUN npm install
+RUN npm install --production
 
 COPY . .
 

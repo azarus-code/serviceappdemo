@@ -36,9 +36,6 @@ jobs:
       - name: Run tests
         run: npm test || true
 
-      - name: Build the application
-        run: npm run build
-
       # Upload build output (adjust paths as needed) for downstream jobs
       - name: Upload artifact
         uses: actions/upload-artifact@v4
