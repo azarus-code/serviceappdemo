@@ -75,7 +75,13 @@ jobs:
           #SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}
           SONAR_LOGIN: ${{ secrets.SONAR_LOGIN }}
           SONAR_TOKEN: ${{ secrets.SONAR_LOGIN }}
-        run: node $(which sonar-scanner)
+        run: |
+          sudo docker run --rm \
+            -e SONAR_HOST_URL="http://10.0.0.10:9000" \
+            -e SONAR_LOGIN="${{ secrets.SONAR_LOGIN }}" \
+            -v "$(pwd)":/usr/src/app \
+            -w /usr/src/app \
+            sonarsource/sonar-scanner-cli
   scan:
     runs-on: self-hosted
     needs: sonar
