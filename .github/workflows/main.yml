@@ -1,11 +1,12 @@
 name: Build, Test, SonarQube, and Docker Push
 
 on:
-  push:
-    branches:
-      - master
-      - dev
-  pull_request:
+ workflow_dispatch:
+    inputs:
+      example_input:
+        description: 'An example input value'
+        required: false
+        default: 'default value'
 
 jobs:
   build:
