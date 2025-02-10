@@ -7,9 +7,7 @@
       "#server": "./src"
     },
     "ava": {
-      "require": [
-        "module-alias/register"
-      ],
+
       "files": [
         "**/**.test.js"
       ],
